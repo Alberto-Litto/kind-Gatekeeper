@@ -15,37 +15,45 @@ provider "yandex" {
   cloud_id                 = "b1g7vc0qhepoquep2qb3"
   folder_id                = "b1gc94tgq747qlg0l7af"
   service_account_key_file = "/home/aza/key.json"
-  zone = "ru-central1-a"
+  zone = "ru-central1-e"
 }
 
-resource "yandex_compute_disk" "boot-disk-1" {
-  name     = "boot-disk-1"
+resource "yandex_compute_disk" "disk" {
+  name     = "disk"
   type     = "network-hdd"
-  zone     = "ru-central1-a"
+  zone     = "ru-central1-e"
   size     = "20"
   image_id = "fd83j4siasgfq4pi1qif"
 }
 
-resource "yandex_compute_instance" "vm-1" {
-  name = "terraform1"
+# Данные о существующей сети и подсети
+data "yandex_vpc_network" "existing-network" {
+  name = "default"  # Имя существующей сети
+}
 
+data "yandex_vpc_subnet" "existing-subnet" {
+  name = "default-ru-central1-e"  # Имя существующей подсети
+}
+
+resource "yandex_compute_instance" "vm-7" {
+  name = "kuba"
+ platform_id = "standard-v2"
   resources {
     cores  = 2
     memory = 2
   }
 
   boot_disk {
-    disk_id = yandex_compute_disk.boot-disk-1.id
+    disk_id = yandex_compute_disk.disk.id
   }
 
   network_interface {
-    subnet_id = yandex_vpc_subnet.subnet-1.id
+    subnet_id = data.yandex_vpc_subnet.existing-subnet.id  # Используем существующую подсеть
     nat       = true
   }
 
   metadata = {
     user-data = "${file("meta.txt")}"
-    ssh-keys = "debian:${file("/home/aza/aza")}"
   }
 
   scheduling_policy {
@@ -53,32 +61,20 @@ resource "yandex_compute_instance" "vm-1" {
   }
 }
 
-resource "yandex_vpc_network" "network-1" {
-  name = "network1"
-}
-
-resource "yandex_vpc_subnet" "subnet-1" {
-  name           = "subnet1"
-  zone           = "ru-central1-a"
-  network_id     = yandex_vpc_network.network-1.id
-  v4_cidr_blocks = ["192.168.10.0/24"]
-}
-
 output "internal_ip_address_vm_1" {
-  value = yandex_compute_instance.vm-1.network_interface.0.ip_address
+  value = yandex_compute_instance.vm-7.network_interface.0.ip_address
 }
 
 output "external_ip_address_vm_1" {
-  value = yandex_compute_instance.vm-1.network_interface.0.nat_ip_address
+  value = yandex_compute_instance.vm-7.network_interface.0.nat_ip_address
 }
 
 resource "null_resource" "baz" {
   connection {
     type = "ssh"
     user = "debian"
-    host = yandex_compute_instance.vm-1.network_interface.0.nat_ip_address
-    # если нужен кастомный ключ:
-    # private_key = file("~/.ssh/id_ed25519")
+    host = yandex_compute_instance.vm-7.network_interface.0.nat_ip_address
+    private_key = file ("/home/aza/aza")
   }
 
   provisioner "remote-exec" {
