@@ -12,6 +12,9 @@ terraform {
 }
 
 provider "yandex" {
+  cloud_id                 = "b1g7vc0qhepoquep2qb3"
+  folder_id                = "b1gc94tgq747qlg0l7af"
+  service_account_key_file = "/home/aza/key.json"
   zone = "ru-central1-a"
 }
 
