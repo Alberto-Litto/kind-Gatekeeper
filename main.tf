@@ -42,7 +42,7 @@ resource "yandex_compute_instance" "vm-1" {
 
   metadata = {
     user-data = "${file("meta.txt")}"
-    ssh-keys = "debian:${file("~/aza")}"
+    ssh-keys = "debian:${file("/home/aza/aza")}"
   }
 
   scheduling_policy {
