@@ -1,4 +1,4 @@
-apiVersion: templates.gatekeeper.sh/v1
+ apiVersion: templates.gatekeeper.sh/v1
 kind: ConstraintTemplate
 metadata:
   name: k8sdenyrootuser
@@ -23,7 +23,7 @@ spec:
         # ============================================================
         # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
         # ============================================================
-
+ 
         # Проверка на исключения по namespace
         is_exempt_namespace(namespace) {
           ns := input.parameters.exemptNamespaces[_]
