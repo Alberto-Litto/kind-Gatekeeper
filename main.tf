@@ -104,7 +104,7 @@ resource "null_resource" "baz" {
       "chmod +x kind",
       "sudo mv kind /usr/local/bin/kind",
 
-      # Конфиг для kind-кластера
+      # Конфиг для kind-кластера (создаёт конфиг-файл для Kind-кластера с одной control-plane (master) нодой и одной worker нодой)
       "printf 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\nnodes:\n- role: control-plane\n- role: worker\n' > kind-config.yaml",
 
       # Создание кластера kind ОТ root
