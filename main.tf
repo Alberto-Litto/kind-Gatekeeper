@@ -127,17 +127,19 @@ provisioner "remote-exec" {
 
       # Устанавливаем Gatekeeper через локальный чарт
       "helm install gatekeeper ./gatekeeper/ --namespace gatekeeper-system --create-namespace",
+      
+      "sudo mkdir -p /home/debian/gatekeeper/constraints"
     ]
   }
 
 # Копируем файлы
 provisioner "file" {
-  source      = "${path.module}/kind-Gatekeeper/Gatekeeper/constraints/"  
-  destination = "/home/debian/kind-Gatekeeper/Gatekeeper/constraints/"
+  source      = "${path.module}/Gatekeeper/Gatekeeper/constraints/"  
+  destination = "/home/debian/gatekeeper/Gatekeeper/constraints"
 }
 provisioner "file" {
-  source      = "${path.module}/kind-Gatekeeper/Gatekeeper/templates/"  
-  destination = "/home/debian/kind-Gatekeeper/Gatekeeper/templates/"
+  source      = "${path.module}/Gatekeeper/Gatekeeper/templates/"  
+  destination = "/home/debian/gatekeeper/Gatekeeper/templates"
 }
 
   triggers = {
