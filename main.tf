@@ -136,12 +136,12 @@ provisioner "remote-exec" {
 
 # Копируем файлы
 provisioner "file" {
-  source      = "${path.module}/Gatekeeper/Gatekeeper/constraints/"  
-  destination = "/home/debian/gatekeeper/Gatekeeper/constraints"
+  source      = "${path.module}/Gatekeeper/constraints/"  
+  destination = "/home/debian/gatekeeper/constraints"
 }
 provisioner "file" {
-  source      = "${path.module}/Gatekeeper/Gatekeeper/templates/"  
-  destination = "/home/debian/gatekeeper/Gatekeeper/templates"
+  source      = "${path.module}/Gatekeeper/templates/"  
+  destination = "/home/debian/gatekeeper/templates"
 }
 
   triggers = {
