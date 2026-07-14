@@ -93,14 +93,11 @@ provisioner "remote-exec" {
       "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable' | sudo tee /etc/apt/sources.list.d/docker.list",
       "sudo apt update",
       "sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
-      "sudo usermod -aG docker $USER"
-      "sudo docker --version"
 
       # Установка kubectl
       "curl -LO https://dl.k8s.io/v1.36.1/bin/linux/amd64/kubectl",
       "chmod +x kubectl",
       "sudo mv kubectl /usr/local/bin/kubectl",
-      "kubectl version --client"
 
       # Установка kind (версия 0.27 совместима с kubectl v1.36)
       "curl -Lo kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64",
@@ -111,7 +108,7 @@ provisioner "remote-exec" {
       "printf 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\nnodes:\n- role: control-plane\n- role: worker\n' > kind-config.yaml",
 
       # Создание кластера kind с конфигурацией из созданного конфиг-файла
-      "sudo kind create cluster --name project_test --config kind-config.yaml",
+      "sudo kind create cluster --name project-test --config kind-config.yaml",
 
       # Перенос kubeconfig в домашнюю директорию пользователя debian
       "sudo mkdir -p /home/debian/.kube",
