@@ -128,7 +128,9 @@ provisioner "remote-exec" {
       # Устанавливаем Gatekeeper через локальный чарт
       "helm install gatekeeper ./gatekeeper/ --namespace gatekeeper-system --create-namespace",
       
-      "sudo mkdir -p /home/debian/gatekeeper/constraints"
+      "sudo mkdir -p /home/debian/gatekeeper/constraints",
+      "sudo chown -R debian:debian /home/debian/gatekeeper/constraints",
+      "sudo chmod -R 755 /home/debian/gatekeeper/constraints",
     ]
   }
 
