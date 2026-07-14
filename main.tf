@@ -94,7 +94,7 @@ provisioner "remote-exec" {
       "sudo apt update",
       "sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
       "sudo usermod -aG docker $USER"
-      "docker --version"
+      "sudo docker --version"
 
       # Установка kubectl
       "curl -LO https://dl.k8s.io/v1.36.1/bin/linux/amd64/kubectl",
