@@ -79,7 +79,7 @@ resource "null_resource" "baz" {
 
   provisioner "remote-exec" {
     inline = [
-      # Обновление системы и базовые пакеты
+      # Обновление списка пакетов, установка утилит
       "sudo apt update",
       "sudo apt -y install ca-certificates curl git",
 
@@ -90,14 +90,17 @@ resource "null_resource" "baz" {
       "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable' | sudo tee /etc/apt/sources.list.d/docker.list",
       "sudo apt update",
       "sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+      "sudo usermod -aG docker $USER"
+      "docker --version"
 
       # Установка kubectl
-      "curl -LO https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl",
+      "curl -LO https://dl.k8s.io/v1.36.1/bin/linux/amd64/kubectl",
       "chmod +x kubectl",
       "sudo mv kubectl /usr/local/bin/kubectl",
+      "kubectl version --client"
 
-      # Установка kind
-      "curl -Lo kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64",
+      # Установка kind (версия 0.27 совместима с kubectl v1.36)
+      "curl -Lo kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64",
       "chmod +x kind",
       "sudo mv kind /usr/local/bin/kind",
 
