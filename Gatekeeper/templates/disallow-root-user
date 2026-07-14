@@ -10,54 +10,111 @@ spec:
       validation:
         openAPIV3Schema:
           type: object
-          properties: {}
+          properties:
+            exemptNamespaces:
+              type: array
+              items:
+                type: string
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package k8sdenyrootuser
 
-        # Запрещаем явный root (runAsUser: 0)
-        violation[{"msg": msg}] {
-          input.review.kind.kind == "Pod"
-          container := input.review.object.spec.containers[_]
-          
-          container.securityContext.runAsUser == 0
-          msg := sprintf("Container %v explicitly runs as root (runAsUser=0)", [container.name])
+        # ============================================================
+        # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        # ============================================================
+
+        # Проверка на исключения по namespace
+        is_exempt_namespace(namespace) {
+          ns := input.parameters.exemptNamespaces[_]
+          ns == namespace
         }
 
-        # Запрещаем поды без явного non-root
-        violation[{"msg": msg}] {
-          input.review.kind.kind == "Pod"
-          container := input.review.object.spec.containers[_]
-          
-          # Проверяем, что нет securityContext или он не обеспечивает non-root
-          not security_context_ensures_non_root(container)
-          
-          msg := sprintf("Container %v must explicitly set runAsNonRoot: true or runAsUser > 0", [container.name])
-        }
-
-        # Вспомогательная функция: проверяет, что securityContext обеспечивает non-root
-        security_context_ensures_non_root(container) {
+        # Проверка, что securityContext существует и корректен
+        has_valid_security_context(container) {
+          container.securityContext
           container.securityContext.runAsNonRoot == true
         }
 
-        security_context_ensures_non_root(container) {
-          container.securityContext.runAsUser > 0
+        # Проверка на опасные настройки (с проверкой наличия securityContext)
+        has_dangerous_settings(container) {
+          container.securityContext
+          container.securityContext.runAsNonRoot == false
         }
 
-        # Проверяем initContainers
-        violation[{"msg": msg}] {
-          input.review.kind.kind == "Pod"
-          container := input.review.object.spec.initContainers[_]
-          
+        has_dangerous_settings(container) {
+          container.securityContext
           container.securityContext.runAsUser == 0
-          msg := sprintf("InitContainer %v explicitly runs as root (runAsUser=0)", [container.name])
         }
+
+        has_dangerous_settings(container) {
+          container.securityContext
+          container.securityContext.privileged == true
+        }
+
+        # ============================================================
+        # ПРОВЕРКИ ДЛЯ ОСНОВНЫХ КОНТЕЙНЕРОВ
+        # ============================================================
+
+        # Правило 1: Запрещаем опасные настройки
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          not is_exempt_namespace(input.review.namespace)
+          
+          # Проверяем наличие контейнеров
+          input.review.object.spec.containers
+          container := input.review.object.spec.containers[_]
+          
+          has_dangerous_settings(container)
+          msg := format_dangerous_message(container)
+        }
+
+        # Правило 2: Требуем наличие корректного securityContext
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          not is_exempt_namespace(input.review.namespace)
+          
+          input.review.object.spec.containers
+          container := input.review.object.spec.containers[_]
+          
+          not has_valid_security_context(container)
+          msg := sprintf("Container %s must have securityContext with runAsNonRoot: true. Current securityContext: %v", 
+            [container.name, container.securityContext])
+        }
+
+        # ============================================================
+        # ФОРМАТИРОВАНИЕ СООБЩЕНИЙ
+        # ============================================================
+
+        format_dangerous_message(container) = msg {
+          container.securityContext
+          container.securityContext.runAsNonRoot == false
+          msg := sprintf("Container %s has runAsNonRoot: false (explicitly allows root)", [container.name])
+        }
+
+        format_dangerous_message(container) = msg {
+          container.securityContext
+          container.securityContext.runAsUser == 0
+          msg := sprintf("Container %s explicitly runs as root (runAsUser: 0)", [container.name])
+        }
+
+        format_dangerous_message(container) = msg {
+          container.securityContext
+          container.securityContext.privileged == true
+          msg := sprintf("Container %s is privileged (securityContext.privileged: true)", [container.name])
+        }
+
+        # ============================================================
+        # ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Пустые контейнеры
+        # ============================================================
 
         violation[{"msg": msg}] {
           input.review.kind.kind == "Pod"
-          container := input.review.object.spec.initContainers[_]
+          not is_exempt_namespace(input.review.namespace)
           
-          not security_context_ensures_non_root(container)
-          msg := sprintf("InitContainer %v must explicitly set runAsNonRoot: true or runAsUser > 0", [container.name])
+          # Проверяем, что есть хотя бы один контейнер
+          not input.review.object.spec.containers
+          not input.review.object.spec.initContainers
+          
+          msg := "Pod must have at least one container or initContainer"
         }
