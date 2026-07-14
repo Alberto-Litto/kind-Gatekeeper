@@ -26,18 +26,19 @@ resource "yandex_compute_disk" "disk" {
   image_id = "fd83j4siasgfq4pi1qif"
 }
 
-# Данные о существующей сети и подсети
-data "yandex_vpc_network" "existing-network" {
+# Данные о существующей сети
+  data "yandex_vpc_network" "existing-network" {
   name = "default"  # Имя существующей сети
 }
 
-data "yandex_vpc_subnet" "existing-subnet" {
+  # Данные о существующей подсети
+  data "yandex_vpc_subnet" "existing-subnet" {
   name = "default-ru-central1-e"  # Имя существующей подсети
 }
 
 resource "yandex_compute_instance" "vm-7" {
   name = "kuba"
- platform_id = "standard-v2"
+  platform_id = "standard-v2"
   resources {
     cores  = 2
     memory = 2
@@ -77,13 +78,15 @@ resource "null_resource" "baz" {
     private_key = file ("/home/aza/aza")
   }
 
-  provisioner "remote-exec" {
+ 
+provisioner "remote-exec" {
     inline = [
+    
       # Обновление списка пакетов, установка утилит
       "sudo apt update",
       "sudo apt -y install ca-certificates curl git",
 
-      # Установка Docker
+      # Установка Docker и его утилит
       "sudo install -m 0755 -d /etc/apt/keyrings",
       "sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc",
       "sudo chmod a+r /etc/apt/keyrings/docker.asc",
@@ -107,16 +110,16 @@ resource "null_resource" "baz" {
       # Конфиг для kind-кластера (создаёт конфиг-файл для Kind-кластера с одной control-plane (master) нодой и одной worker нодой)
       "printf 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\nnodes:\n- role: control-plane\n- role: worker\n' > kind-config.yaml",
 
-      # Создание кластера kind ОТ root
-      "sudo kind create cluster --name secure-lab --config kind-config.yaml",
+      # Создание кластера kind с конфигурацией из созданного конфиг-файла
+      "sudo kind create cluster --name project_test --config kind-config.yaml",
 
       # Перенос kubeconfig в домашнюю директорию пользователя debian
       "sudo mkdir -p /home/debian/.kube",
       "sudo cp /root/.kube/config /home/debian/.kube/config",
       "sudo chown -R debian:debian /home/debian/.kube",
 
-      # Установка Helm (надёжный бинарный способ)
-      "curl -fsSL https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz -o helm.tar.gz",
+      # Установка Helm
+      "curl -fsSL https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz -o helm.tar.gz",
       "tar -xzf helm.tar.gz",
       "sudo mv linux-amd64/helm /usr/local/bin/helm",
       "rm -rf linux-amd64 helm.tar.gz",
