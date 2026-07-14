@@ -77,8 +77,8 @@ resource "null_resource" "baz" {
     host = yandex_compute_instance.vm-7.network_interface.0.nat_ip_address
     private_key = file ("/home/aza/aza")
   }
+  
 
- 
 provisioner "remote-exec" {
     inline = [
     
@@ -132,6 +132,16 @@ provisioner "remote-exec" {
       "helm install gatekeeper ./gatekeeper/ --namespace gatekeeper-system --create-namespace",
     ]
   }
+
+# Копируем файлы
+provisioner "file" {
+  source      = "${path.module}/kind-Gatekeeper/Gatekeeper/constraints/"  
+  destination = "/home/debian/kind-Gatekeeper/Gatekeeper/constraints/"
+}
+provisioner "file" {
+  source      = "${path.module}/kind-Gatekeeper/Gatekeeper/templates/"  
+  destination = "/home/debian/kind-Gatekeeper/Gatekeeper/templates/"
+}
 
   triggers = {
     always_run = timestamp()
